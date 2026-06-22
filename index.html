@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>视频去水印工具 · 专业版</title>
+<style>
+/* ═══════════════════════════════════════════════════════════ */
+/* 变量 & 基础 */
+/* ═══════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080810; --surface:rgba(22,22,38,0.8); --surface2:rgba(30,30,50,0.7);
+  --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.1);
+  --text:#e8e8f0; --text2:#a0a0b8; --muted:#6a6a80;
+  --accent:#7c3aed; --accent2:#a855f7; --accent3:#6366f1;
+  --success:#22c55e; --danger:#ef4444; --warn:#f59e0b;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+  --radius:16px; --radius-sm:10px;
+  --font:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+}
+body{
+  font-family:var(--font); background:var(--bg);
+  color:var(--text); min-height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px 16px;
+}
+/* 背景动画 */
+body::before{
+  content:''; position:fixed; inset:0; z-index:-1;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%, rgba(124,58,237,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 80%, rgba(99,102,241,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(168,85,247,0.04) 0%, transparent 60%);
+}
+.container{width:100%;max-width:560px;position:relative;z-index:1}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* Header */
+/* ═══════════════════════════════════════════════════════════ */
+.header{text-align:center;margin-bottom:28px}
+.header .icon{font-size:56px;display:block;margin-bottom:10px;
+  filter:drop-shadow(0 4px 12px rgba(124,58,237,0.3));}
+.header h1{font-size:26px;font-weight:800;
+  background:linear-gradient(135deg,var(--text),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;}
+.header p{color:var(--text2);font-size:13px;margin-top:4px}
+.platforms{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:10px}
+.platform-tag{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2);
+  transition:all .2s;}
+.platform-tag:hover{border-color:var(--accent3);color:var(--accent2)}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* Card 通用 */
+/* ═══════════════════════════════════════════════════════════ */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px 20px;margin-bottom:14px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:var(--shadow);transition:all .3s;
+}
+.card-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+  font-size:13px;font-weight:600;color:var(--text2);
+}
+.card-header .dot{width:8px;height:8px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 8px var(--accent);}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 输入区 */
+/* ═══════════════════════════════════════════════════════════ */
+.mode-tabs{display:flex;gap:6px;margin-bottom:16px}
+.mode-tab{
+  flex:1;padding:9px 12px;border-radius:var(--radius-sm);
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);font-size:13px;font-weight:500;
+  cursor:pointer;text-align:center;transition:all .25s;
+  font-family:var(--font);
+}
+.mode-tab:hover{border-color:var(--border2)}
+.mode-tab.active{
+  background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(99,102,241,0.15));
+  border-color:var(--accent);color:var(--accent2);font-weight:600;
+}
+
+/* URL 输入 */
+.url-wrap{position:relative;margin-bottom:12px}
+.url-input{
+  width:100%;background:var(--surface2);border:2px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 14px 14px 46px;
+  color:var(--text);font-size:14px;outline:none;transition:all .25s;
+  font-family:var(--font);
+}
+.url-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,0.12)}
+.url-input::placeholder{color:var(--muted)}
+.url-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:18px;color:var(--muted);pointer-events:none}
+.action-row{display:flex;gap:8px}
+.btn{
+  padding:11px 18px;border:none;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+  font-family:var(--font);display:flex;align-items:center;justify-content:center;
+  gap:6px;white-space:nowrap;
+}
+.btn:active{transform:scale(0.97)}
+.btn-primary{
+  flex:1;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 4px 16px rgba(124,58,237,0.35);
+}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(124,58,237,0.5);transform:translateY(-1px)}
+.btn-secondary{
+  background:var(--surface2);color:var(--text);border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:var(--border2);background:rgba(255,255,255,0.04)}
+
+/* 上传区 */
+.upload-zone{
+  background:var(--surface2);border:2px dashed var(--border);
+  border-radius:var(--radius-sm);padding:36px 20px;text-align:center;
+  cursor:pointer;transition:all .3s;position:relative;
+}
+.upload-zone:hover,.upload-zone.drag{
+  border-color:var(--accent);background:rgba(124,58,237,0.06);
+}
+.upload-zone .up-icon{font-size:42px;display:block;margin-bottom:8px;
+  transition:transform .3s;}
+.upload-zone:hover .up-icon{transform:translateY(-4px)}
+.upload-zone p{color:var(--text);font-size:14px;font-weight:500}
+.upload-zone small{color:var(--muted);font-size:11px;display:block;margin-top:4px}
+.upload-zone.selected{border-style:solid;border-color:var(--accent)}
+#fileInput{display:none}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 预设 + 预览 */
+/* ═══════════════════════════════════════════════════════════ */
+.preset-row{display:flex;gap:6px;margin-bottom:10px}
+.preset-btn{
+  flex:1;padding:7px 4px;background:var(--surface2);border:1px solid var(--border);
+  color:var(--text2);border-radius:8px;font-size:12px;cursor:pointer;
+  transition:all .2s;font-family:var(--font);
+}
+.preset-btn:hover{border-color:var(--accent3)}
+.preset-btn.active{background:rgba(124,58,237,0.2);border-color:var(--accent);
+  color:var(--accent2);font-weight:600}
+
+.preview-container{
+  position:relative;background:#000;border-radius:var(--radius-sm);
+  overflow:hidden;margin-bottom:10px;aspect-ratio:16/9;
+  cursor:grab;
+}
+.preview-container:active{cursor:grabbing}
+.preview-container canvas,.preview-container video{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+}
+.wm-overlay{
+  position:absolute;border:2px solid rgba(168,85,247,0.8);
+  background:rgba(124,58,237,0.18);cursor:move;z-index:2;
+  box-shadow:0 0 0 1px rgba(168,85,247,0.3), inset 0 0 40px rgba(124,58,237,0.08);
+  transition:box-shadow .2s;
+}
+.wm-overlay:hover{box-shadow:0 0 0 3px rgba(168,85,247,0.4), inset 0 0 40px rgba(124,58,237,0.1)}
+.wm-overlay::after{
+  content:'水印';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:12px;color:rgba(255,255,255,0.9);font-weight:700;pointer-events:none;
+  text-shadow:0 1px 4px rgba(0,0,0,0.6);
+}
+.resize-handle{
+  position:absolute;width:14px;height:14px;
+  background:var(--accent2);border:2px solid #fff;
+  border-radius:4px;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.resize-handle.nw{top:-7px;left:-7px;cursor:nw-resize}
+.resize-handle.ne{top:-7px;right:-7px;cursor:ne-resize}
+.resize-handle.sw{bottom:-7px;left:-7px;cursor:sw-resize}
+.resize-handle.se{bottom:-7px;right:-7px;cursor:se-resize}
+
+.video-meta{display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 算法 + 画质 */
+/* ═══════════════════════════════════════════════════════════ */
+.algo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.algo-card{
+  background:var(--surface2);border:2px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 6px;cursor:pointer;
+  text-align:center;color:var(--text);font-family:var(--font);
+  font-size:12px;transition:all .25s;
+}
+.algo-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.algo-card.active{
+  border-color:var(--accent);background:rgba(124,58,237,0.12);
+  box-shadow:0 0 20px rgba(124,58,237,0.2);
+}
+.algo-card .a-icon{font-size:22px;display:block;margin-bottom:4px}
+.algo-card .a-name{font-weight:700;margin-bottom:2px}
+.algo-card .a-speed{font-size:10px;color:var(--muted)}
+.algo-card.active .a-name{color:var(--accent2)}
+.algo-card.active .a-speed{color:var(--accent3)}
+
+.quality-row{display:flex;gap:6px}
+.quality-btn{
+  flex:1;padding:8px 4px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;
+  text-align:center;transition:all .2s;font-family:var(--font);
+}
+.quality-btn:hover{border-color:var(--border2)}
+.quality-btn.active{
+  border-color:var(--accent);background:rgba(124,58,237,0.15);
+  color:var(--accent2);font-weight:600;
+}
+.quality-btn .q-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
+.quality-btn[data-q="fast"] .q-dot{background:var(--warn)}
+.quality-btn[data-q="balanced"] .q-dot{background:var(--accent3)}
+.quality-btn[data-q="high"] .q-dot{background:var(--accent2)}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 开始按钮 */
+/* ═══════════════════════════════════════════════════════════ */
+.start-btn{
+  width:100%;padding:16px;border:none;border-radius:var(--radius);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:16px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .25s;font-family:var(--font);
+  box-shadow:0 6px 24px rgba(124,58,237,0.4);
+  letter-spacing:.5px;
+}
+.start-btn:hover:not(:disabled){
+  box-shadow:0 8px 32px rgba(124,58,237,0.55);transform:translateY(-2px)}
+.start-btn:active:not(:disabled){transform:scale(0.98)}
+.start-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 进度 */
+/* ═══════════════════════════════════════════════════════════ */
+.progress-card{display:none}
+.progress-card.active{display:block}
+.prog-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.prog-icon{font-size:30px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.prog-info{flex:1}
+.prog-title{font-size:15px;font-weight:700}
+.prog-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.prog-bar{
+  height:8px;background:var(--surface2);border-radius:4px;
+  overflow:hidden;margin-bottom:8px;
+}
+.prog-fill{
+  height:100%;width:0;border-radius:4px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+  background-size:200% 100%;animation:shimmer 2s linear infinite;
+  transition:width .4s ease;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.prog-pct{font-size:14px;font-weight:700;color:var(--accent2);text-align:center}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 结果 */
+/* ═══════════════════════════════════════════════════════════ */
+.result-card{display:none}
+.result-card.active{display:block}
+.result-icon{font-size:64px;text-align:center;display:block;margin-bottom:12px}
+.result-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:4px}
+.result-sub{text-align:center;font-size:12px;color:var(--text2);margin-bottom:18px}
+.result-actions{display:flex;gap:8px}
+.result-actions .btn{flex:1}
+
+/* 错误 */
+.error-card{display:none}
+.error-card.active{display:block}
+.error-box{
+  background:rgba(239,68,68,0.1);border:1px solid var(--danger);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;
+  color:var(--danger);font-size:13px;line-height:1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* Footer */
+/* ═══════════════════════════════════════════════════════════ */
+.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:16px;
+  opacity:.6}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* AI 相关 */
+.ai-row{display:flex;gap:8px;margin-top:10px}
+.ai-btn{
+  flex:1;padding:10px 12px;background:linear-gradient(135deg,rgba(124,58,237,0.25),rgba(99,102,241,0.15));
+  border:1px solid var(--accent);border-radius:var(--radius-sm);
+  color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;
+  font-family:var(--font);transition:all .25s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.ai-btn:hover:not(:disabled){
+  background:linear-gradient(135deg,rgba(124,58,237,0.4),rgba(99,102,241,0.25));
+  box-shadow:0 0 20px rgba(124,58,237,0.3);transform:translateY(-1px);
+}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3)}
+.ai-btn .spinner{
+  width:14px;height:14px;border:2px solid rgba(168,85,247,.3);
+  border-top-color:var(--accent2);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-result{display:none;margin-top:10px}
+.ai-result.active{display:block}
+.ai-box{
+  background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);
+  border-radius:var(--radius-sm);padding:12px 14px;font-size:12px;
+}
+.ai-box .ai-tag{
+  display:inline-block;background:var(--accent);color:#fff;
+  border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;
+  margin-right:6px;text-transform:uppercase;
+}
+.ai-box .ai-desc{margin-top:6px;color:var(--text2);line-height:1.6}
+.ai-box .ai-rec{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)}
+.ai-box .ai-rec strong{color:var(--accent2)}
+
+/* 响应式 */
+/* ═══════════════════════════════════════════════════════════ */
+@media (max-width:480px){
+  .card{padding:16px 14px}
+  .algo-grid{grid-template-columns:repeat(3,1fr);gap:4px}
+  .algo-card{padding:8px 3px;font-size:11px}
+  .algo-card .a-icon{font-size:18px}
+}
+</style>
+<script src="paywall.js"></script>
+</head>
+<body>
+<div class="container">
+
+  <!-- ══════ Header ══════ -->
+  <div class="header">
+    <span class="icon">🧹</span>
+    <h1>视频去水印工具</h1>
+    <p>粘贴链接 / 上传视频 · 智能识别 · 高质量去除</p>
+    <div class="platforms">
+      <span class="platform-tag">抖音</span><span class="platform-tag">快手</span>
+      <span class="platform-tag">B站</span><span class="platform-tag">小红书</span>
+      <span class="platform-tag">视频号</span><span class="platform-tag">微博</span>
+      <span class="platform-tag">YouTube</span>
+      <span class="platform-tag">更多...</span>
+    </div>
+  </div>
+
+  <!-- ══════ 主面板 ══════ -->
+  <div id="mainPanel">
+
+    <!-- ── 输入卡片 ── -->
+    <div class="card">
+      <div class="card-header"><span class="dot"></span> 视频来源</div>
+      <!-- 模式切换 -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('url')" data-mode="url">
+          🔗 链接解析
+        </button>
+        <button class="mode-tab" onclick="switchMode('upload')" data-mode="upload">
+          📁 本地上传
+        </button>
+      </div>
+
+      <!-- URL 模式 -->
+      <div id="urlSection">
+        <div class="url-wrap">
+          <span class="url-icon">🔗</span>
+          <input class="url-input" type="url" id="urlInput"
+            placeholder="粘贴视频链接，如 https://v.douyin.com/xxx"
+            onkeydown="if(event.key==='Enter')processUrl()">
+        </div>
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="processUrl()">
+            📋 粘贴并开始
+          </button>
+          <button class="btn btn-secondary" onclick="pasteClipboard()">
+            📎 粘贴
+          </button>
+        </div>
+      </div>
+
+      <!-- 上传模式 -->
+      <div id="uploadSection" style="display:none">
+        <div class="upload-zone" id="uploadZone"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <span class="up-icon">📤</span>
+          <p>点击选择或拖拽视频到此处</p>
+          <small>支持 MP4 · MOV · AVI · MKV · WebM · FLV（最大 2GB）</small>
+          <input type="file" id="fileInput" accept="video/*" onchange="handleFile(this.files[0])">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 水印区域卡片 ── -->
+    <div class="card">
+      <div class="card-header"><span class="dot"></span> 水印位置</div>
+      <div class="ai-row">
+        <button class="ai-btn" id="aiDetectBtn" onclick="aiDetectWatermark()">
+          🤖 AI 智能检测
+        </button>
+        <button class="ai-btn" id="aiDetectBtn2" onclick="aiDetectWatermark()" style="flex:0.4">
+          📷 截图检测
+        </button>
+      </div>
+      <div class="ai-result" id="aiResult">
+        <div class="ai-box" id="aiBox"></div>
+      </div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="applyPreset('top-left')">⬆ 左上</button>
+        <button class="preset-btn" onclick="applyPreset('top-right')">⬆ 右上</button>
+        <button class="preset-btn active" onclick="applyPreset('bottom-right')">⬇ 右下</button>
+        <button class="preset-btn" onclick="applyPreset('bottom-left')">⬇ 左下</button>
+      </div>
+
+      <!-- 交互式预览 -->
+      <div class="preview-container" id="previewContainer">
+        <canvas id="previewCanvas"></canvas>
+        <div class="wm-overlay" id="wmOverlay">
+          <div class="resize-handle nw" data-dir="nw"></div>
+          <div class="resize-handle ne" data-dir="ne"></div>
+          <div class="resize-handle sw" data-dir="sw"></div>
+          <div class="resize-handle se" data-dir="se"></div>
+        </div>
+      </div>
+
+      <div class="video-meta" id="videoMeta">
+        <span>📐 --</span><span>⏱ --</span><span>📦 --</span>
+      </div>
+    </div>
+
+    <!-- ── 算法 & 画质卡片 ── -->
+    <div class="card">
+      <div class="card-header"><span class="dot"></span> 处理设置</div>
+      <div class="algo-grid" id="algoGrid">
+        <!-- JS 动态生成 -->
+      </div>
+      <div class="quality-row" style="margin-top:8px">
+        <button class="quality-btn" data-q="fast" onclick="setQuality('fast',this)">
+          <span class="q-dot"></span>快速
+        </button>
+        <button class="quality-btn active" data-q="balanced" onclick="setQuality('balanced',this)">
+          <span class="q-dot"></span>标准
+        </button>
+        <button class="quality-btn" data-q="high" onclick="setQuality('high',this)">
+          <span class="q-dot"></span>高质量
+        </button>
+      </div>
+    </div>
+
+    <!-- ── 开始按钮 ── -->
+    <button class="start-btn" id="startBtn" onclick="startProcess()">
+      🚀 开始去除水印
+    </button>
+  </div>
+
+  <!-- ══════ 进度 ══════ -->
+  <div class="card progress-card" id="progressCard">
+    <div class="prog-header">
+      <span class="prog-icon" id="progIcon">⚙️</span>
+      <div class="prog-info">
+        <div class="prog-title" id="progTitle">提交任务...</div>
+        <div class="prog-sub" id="progSub">请稍候</div>
+      </div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="prog-pct" id="progPct">0%</div>
+  </div>
+
+  <!-- ══════ 完成 ══════ -->
+  <div class="card result-card" id="doneCard">
+    <span class="result-icon">✅</span>
+    <div class="result-title">去水印完成！</div>
+    <div class="result-sub">视频已处理完毕，点击下载查看效果</div>
+    <div class="result-actions">
+      <a class="btn btn-primary" href="/api/download" download onclick="afterDownload()">
+        📥 下载视频
+      </a>
+      <button class="btn btn-secondary" onclick="resetAll()">
+        🔄 再处理一个
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════ 错误 ══════ -->
+  <div class="card error-card" id="errorCard">
+    <div class="error-box" id="errorMsg"></div>
+    <button class="btn btn-secondary" style="width:100%" onclick="resetAll()">
+      🔄 重新开始
+    </button>
+  </div>
+
+  <div class="footer">© 2025 视频去水印工具 · 完全免费 · 本地处理更安全</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════ */
+/* 状态管理 */
+/* ═══════════════════════════════════════════════════════════ */
+let mode = 'url';           // 'url' | 'upload'
+let hasFile = false;        // 是否已选本地文件
+let selectedFile = null;
+let preset = 'bottom-right';
+let algorithm = 'delogo';
+let quality = 'balanced';
+let pollTimer = null;
+let videoInfo = null;       // {width, height, duration}
+
+// 水印区域比例 (0~1)
+let wmRegion = { x_frac: 0.72, y_frac: 0.89, w_frac: 0.28, h_frac: 0.11 };
+
+// 预设定义
+const PRESETS = {
+  'top-left':     { x_frac: 0.01, y_frac: 0.01, w_frac: 0.28, h_frac: 0.11 },
+  'top-right':    { x_frac: 0.71, y_frac: 0.01, w_frac: 0.28, h_frac: 0.11 },
+  'bottom-right': { x_frac: 0.71, y_frac: 0.88, w_frac: 0.28, h_frac: 0.11 },
+  'bottom-left':  { x_frac: 0.01, y_frac: 0.88, w_frac: 0.28, h_frac: 0.11 },
+};
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 算法卡片生成 */
+/* ═══════════════════════════════════════════════════════════ */
+const ALGOS = [
+  { id:'delogo',       icon:'🔧', name:'智能融合', speed:'⚡ 极速' },
+  { id:'blur',         icon:'🌀', name:'高斯模糊', speed:'⚡ 极速' },
+  { id:'mosaic',       icon:'🔲', name:'马赛克',   speed:'⚡ 极速' },
+  { id:'inpaint_telea',icon:'🖌️', name:'快速修复', speed:'🐢 较慢' },
+  { id:'inpaint_ns',   icon:'✨', name:'深度修复', speed:'🐢 慢' },
+];
+
+function renderAlgos() {
+  const grid = document.getElementById('algoGrid');
+  grid.style.gridTemplateColumns = 'repeat(5,1fr)';  // 改为 5 列
+  grid.innerHTML = ALGOS.map(a => `
+    <div class="algo-card ${a.id === algorithm ? 'active' : ''}"
+         onclick="setAlgo('${a.id}',this)" data-algo="${a.id}">
+      <span class="a-icon">${a.icon}</span>
+      <div class="a-name">${a.name}</div>
+      <div class="a-speed">${a.speed}</div>
+    </div>
+  `).join('');
+}
+renderAlgos();
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 模式切换 */
+/* ═══════════════════════════════════════════════════════════ */
+function switchMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.mode === m));
+  document.getElementById('urlSection').style.display = m === 'url' ? 'block' : 'none';
+  document.getElementById('uploadSection').style.display = m === 'upload' ? 'block' : 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 剪贴板 & URL 处理 */
+/* ═══════════════════════════════════════════════════════════ */
+async function pasteClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('urlInput').value = text;
+    showToast('✅ 已粘贴');
+  } catch {
+    document.getElementById('urlInput').focus();
+    showToast('请手动粘贴链接');
+  }
+}
+
+function processUrl() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) {
+    showToast('请输入视频链接');
+    document.getElementById('urlInput').focus();
+    return;
+  }
+  hasFile = false; selectedFile = null;
+  startProcess();
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 文件上传 */
+/* ═══════════════════════════════════════════════════════════ */
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  hasFile = true;
+  const zone = document.getElementById('uploadZone');
+  zone.classList.add('selected');
+  zone.querySelector('p').textContent = '✅ ' + file.name;
+  zone.querySelector('small').textContent = formatSize(file.size);
+  showVideoPreview(file);
+}
+
+function showVideoPreview(srcOrFile) {
+  const container = document.getElementById('previewContainer');
+  const video = document.createElement('video');
+  video.muted = true; video.playsInline = true; video.preload = 'metadata';
+  video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000';
+
+  if (typeof srcOrFile === 'string') {
+    video.src = srcOrFile;
+  } else {
+    video.src = URL.createObjectURL(srcOrFile);
+  }
+
+  // 清理旧元素（保留 overlay）
+  const old = container.querySelectorAll('video,canvas:not(#previewCanvas)');
+  old.forEach(e => e.remove());
+
+  container.insertBefore(video, container.firstChild);
+
+  video.onloadedmetadata = () => {
+    videoInfo = {
+      width: video.videoWidth,
+      height: video.videoHeight,
+      duration: video.duration,
+    };
+    // 跳转到 10% 位置截图
+    const seekTo = Math.min(video.duration * 0.1, 3);
+    if (seekTo < video.duration) {
+      video.currentTime = seekTo;
+    }
+  };
+
+  video.onseeked = () => {
+    // 绘制静态预览
+    const canvas = document.getElementById('previewCanvas');
+    canvas.style.display = 'block';
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // 元信息
+    updateMeta();
+    // 更新 overlay
+    updateOverlay();
+  };
+
+  video.onerror = () => {
+    videoInfo = {
+      width: selectedFile ? 0 : 1920,
+      height: selectedFile ? 0 : 1080,
+      duration: 0,
+    };
+    updateMeta();
+  };
+}
+
+function updateMeta() {
+  const meta = document.getElementById('videoMeta');
+  if (!videoInfo) {
+    meta.innerHTML = '<span>📐 --</span><span>⏱ --</span><span>📦 --</span>';
+    return;
+  }
+  const { width, height, duration } = videoInfo;
+  const dur = duration > 0
+    ? `${Math.floor(duration/60)}:${String(Math.floor(duration%60)).padStart(2,'0')}`
+    : '--:--';
+  const size = selectedFile ? formatSize(selectedFile.size) : '--';
+  meta.innerHTML = `
+    <span>📐 ${width}×${height}</span>
+    <span>⏱ ${dur}</span>
+    <span>📦 ${size}</span>`;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 水印 overlay — 拖拽 + 缩放 */
+/* ═══════════════════════════════════════════════════════════ */
+function applyPreset(id) {
+  preset = id;
+  wmRegion = { ...PRESETS[id] };
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.includes(id.replace('-',''))));
+  updateOverlay();
+}
+
+function updateOverlay() {
+  if (!videoInfo || !videoInfo.width) return;
+  const overlay = document.getElementById('wmOverlay');
+  const container = document.getElementById('previewContainer');
+  const rect = container.getBoundingClientRect();
+  const cW = rect.width, cH = rect.height;
+
+  // 视频在容器中的实际显示区域（object-fit:contain）
+  const vAspect = videoInfo.width / videoInfo.height;
+  const cAspect = cW / cH;
+  let vW, vH, ox, oy;
+  if (vAspect > cAspect) {
+    vW = cW; vH = cW / vAspect; ox = 0; oy = (cH - vH) / 2;
+  } else {
+    vH = cH; vW = cH * vAspect; ox = (cW - vW) / 2; oy = 0;
+  }
+
+  const px = ox + wmRegion.x_frac * vW;
+  const py = oy + wmRegion.y_frac * vH;
+  const pw = wmRegion.w_frac * vW;
+  const ph = wmRegion.h_frac * vH;
+
+  overlay.style.left = px + 'px';
+  overlay.style.top = py + 'px';
+  overlay.style.width = pw + 'px';
+  overlay.style.height = ph + 'px';
+  overlay.style.display = 'block';
+}
+
+// ── 拖拽移动 ──
+let dragState = null;
+const overlay = document.getElementById('wmOverlay');
+
+overlay.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('resize-handle')) return;
+  e.preventDefault();
+  dragState = {
+    type: 'move',
+    startX: e.clientX, startY: e.clientY,
+    origX: parseFloat(overlay.style.left),
+    origY: parseFloat(overlay.style.top),
+  };
+});
+
+document.querySelectorAll('.resize-handle').forEach(h => {
+  h.addEventListener('mousedown', e => {
+    e.preventDefault(); e.stopPropagation();
+    dragState = {
+      type: 'resize', dir: h.dataset.dir,
+      startX: e.clientX, startY: e.clientY,
+      origL: parseFloat(overlay.style.left),
+      origT: parseFloat(overlay.style.top),
+      origW: parseFloat(overlay.style.width),
+      origH: parseFloat(overlay.style.height),
+    };
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragState || !videoInfo) return;
+
+  const container = document.getElementById('previewContainer');
+  const rect = container.getBoundingClientRect();
+  const cW = rect.width, cH = rect.height;
+  const vAspect = videoInfo.width / videoInfo.height;
+  const cAspect = cW / cH;
+  let vW, vH, ox, oy;
+  if (vAspect > cAspect) {
+    vW = cW; vH = cW / vAspect; ox = 0; oy = (cH - vH) / 2;
+  } else {
+    vH = cH; vW = cH * vAspect; ox = (cW - vW) / 2; oy = 0;
+  }
+
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+
+  if (dragState.type === 'move') {
+    let nx = dragState.origX + dx;
+    let ny = dragState.origY + dy;
+    nx = Math.max(ox, Math.min(ox + vW - parseFloat(overlay.style.width), nx));
+    ny = Math.max(oy, Math.min(oy + vH - parseFloat(overlay.style.height), ny));
+    overlay.style.left = nx + 'px';
+    overlay.style.top = ny + 'px';
+
+    // 反算比例
+    wmRegion.x_frac = (nx - ox) / vW;
+    wmRegion.y_frac = (ny - oy) / vH;
+  } else if (dragState.type === 'resize') {
+    let nL = dragState.origL, nT = dragState.origT;
+    let nW = dragState.origW, nH = dragState.origH;
+    const dir = dragState.dir;
+
+    if (dir.includes('e')) nW = Math.max(20, dragState.origW + dx);
+    if (dir.includes('w')) { nW = Math.max(20, dragState.origW - dx); nL = dragState.origL + dx; }
+    if (dir.includes('s')) nH = Math.max(10, dragState.origH + dy);
+    if (dir.includes('n')) { nH = Math.max(10, dragState.origH - dy); nT = dragState.origT + dy; }
+
+    // 边界约束
+    nL = Math.max(ox, nL);
+    nT = Math.max(oy, nT);
+    if (nL + nW > ox + vW) nW = ox + vW - nL;
+    if (nT + nH > oy + vH) nH = oy + vH - nT;
+
+    overlay.style.left = nL + 'px';
+    overlay.style.top = nT + 'px';
+    overlay.style.width = nW + 'px';
+    overlay.style.height = nH + 'px';
+
+    wmRegion.x_frac = (nL - ox) / vW;
+    wmRegion.y_frac = (nT - oy) / vH;
+    wmRegion.w_frac = nW / vW;
+    wmRegion.h_frac = nH / vH;
+  }
+});
+
+document.addEventListener('mouseup', () => { dragState = null; });
+
+// 触摸事件
+overlay.addEventListener('touchstart', e => {
+  if (e.target.classList.contains('resize-handle')) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  dragState = {
+    type: 'move', startX: t.clientX, startY: t.clientY,
+    origX: parseFloat(overlay.style.left), origY: parseFloat(overlay.style.top),
+  };
+});
+
+document.addEventListener('touchmove', e => {
+  if (!dragState || !videoInfo) return;
+  const t = e.touches[0];
+  const container = document.getElementById('previewContainer');
+  const rect = container.getBoundingClientRect();
+  const cW = rect.width, cH = rect.height;
+  const vAspect = videoInfo.width / videoInfo.height;
+  const cAspect = cW / cH;
+  let vW, vH, ox, oy;
+  if (vAspect > cAspect) {
+    vW = cW; vH = cW / vAspect; ox = 0; oy = (cH - vH) / 2;
+  } else {
+    vH = cH; vW = cH * vAspect; ox = (cW - vW) / 2; oy = 0;
+  }
+  const dx = t.clientX - dragState.startX;
+  const dy = t.clientY - dragState.startY;
+  let nx = dragState.origX + dx;
+  let ny = dragState.origY + dy;
+  nx = Math.max(ox, Math.min(ox + vW - parseFloat(overlay.style.width), nx));
+  ny = Math.max(oy, Math.min(oy + vH - parseFloat(overlay.style.height), ny));
+  overlay.style.left = nx + 'px';
+  overlay.style.top = ny + 'px';
+  wmRegion.x_frac = (nx - ox) / vW;
+  wmRegion.y_frac = (ny - oy) / vH;
+});
+
+document.addEventListener('touchend', () => { dragState = null; });
+
+// 窗口缩放时更新 overlay
+window.addEventListener('resize', () => {
+  if (videoInfo) updateOverlay();
+});
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 算法 & 画质 */
+/* ═══════════════════════════════════════════════════════════ */
+function setAlgo(id, el) {
+  algorithm = id;
+  document.querySelectorAll('.algo-card').forEach(c =>
+    c.classList.toggle('active', c.dataset.algo === id));
+}
+
+function setQuality(q, el) {
+  quality = q;
+  document.querySelectorAll('.quality-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.q === q));
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* AI 智能检测 */
+/* ═══════════════════════════════════════════════════════════ */
+async function aiDetectWatermark() {
+  const canvas = document.getElementById('previewCanvas');
+  if (!canvas || canvas.style.display === 'none') {
+    showToast('请先选择视频文件生成预览');
+    return;
+  }
+
+  const btn = document.getElementById('aiDetectBtn');
+  const btn2 = document.getElementById('aiDetectBtn2');
+  const resultDiv = document.getElementById('aiResult');
+  const box = document.getElementById('aiBox');
+
+  // 按钮变 loading
+  btn.disabled = true; btn2.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> AI 检测中...';
+  btn2.innerHTML = '<span class="spinner"></span> 检测中...';
+  resultDiv.classList.remove('active');
+
+  try {
+    // 从 canvas 导出 JPEG blob
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+
+    // 构造 FormData（附带视频元信息）
+    const fd = new FormData();
+    fd.append('frame', blob, 'frame.jpg');
+    if (videoInfo) {
+      fd.append('video_width', String(videoInfo.width || 0));
+      fd.append('video_height', String(videoInfo.height || 0));
+      fd.append('video_duration', String(videoInfo.duration || 0));
+      fd.append('video_fps', String(videoInfo.fps || 30));
+    }
+
+    const r = await fetch('/api/ai/detect', { method: 'POST', body: fd });
+    const data = await r.json();
+
+    if (data.error) {
+      showAIError(data.error);
+      return;
+    }
+
+    // 显示结果
+    const hasWm = data.has_watermark;
+    const conf = data.confidence ? Math.round(data.confidence * 100) : 0;
+    const wmType = data.type || '未知';
+    const typeLabel = { text: '文字', logo: '图标Logo', mixed: '组合', transparent: '半透明' }[wmType] || wmType;
+
+    let html = '<div style="margin-bottom:6px">';
+    html += `<span class="ai-tag">${hasWm ? '✅ 检测到水印' : '⚠️ 未检测到'}</span>`;
+    html += `<span class="ai-tag">${typeLabel}</span>`;
+    html += `<span class="ai-tag">置信度 ${conf}%</span>`;
+    html += '</div>';
+
+    if (data.description) {
+      html += `<div class="ai-desc">${data.description}</div>`;
+    }
+
+    // 算法推荐
+    if (data.recommendation) {
+      const rec = data.recommendation;
+      html += '<div class="ai-rec">';
+      html += `<div>💡 推荐: <strong>${rec.algorithm}</strong> · <strong>${rec.quality}</strong></div>`;
+      html += `<div class="ai-desc">${rec.reasoning || ''}</div>`;
+      if (rec.tips && rec.tips.length) {
+        html += '<div class="ai-desc" style="margin-top:4px">';
+        html += rec.tips.map(t => '· ' + t).join('<br>');
+        html += '</div>';
+      }
+      html += '</div>';
+
+      // 自动应用算法推荐
+      if (rec.algorithm) {
+        setAlgo(rec.algorithm);
+        document.querySelectorAll('.algo-card').forEach(c =>
+          c.classList.toggle('active', c.dataset.algo === rec.algorithm));
+      }
+      if (rec.quality) {
+        setQuality(rec.quality);
+        document.querySelectorAll('.quality-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.q === rec.quality));
+      }
+    }
+
+    box.innerHTML = html;
+    resultDiv.classList.add('active');
+
+    // 自动调整水印区域
+    if (hasWm && data.x_frac !== undefined && data.y_frac !== undefined) {
+      wmRegion = {
+        x_frac: data.x_frac, y_frac: data.y_frac,
+        w_frac: data.w_frac || 0.28, h_frac: data.h_frac || 0.11,
+      };
+      updateOverlay();
+      showToast(`✅ 已定位水印 (${conf}%置信度)`);
+    }
+
+  } catch (e) {
+    showAIError('网络或 API 异常: ' + e.message);
+  } finally {
+    btn.disabled = false; btn2.disabled = false;
+    btn.innerHTML = '🤖 AI 智能检测';
+    btn2.innerHTML = '📷 截图检测';
+  }
+}
+
+function showAIError(msg) {
+  const box = document.getElementById('aiBox');
+  const resultDiv = document.getElementById('aiResult');
+  box.innerHTML = `<div style="color:var(--danger)">❌ ${msg}</div>`;
+  resultDiv.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 开始处理 */
+/* ═══════════════════════════════════════════════════════════ */
+async function startProcess() {
+      // 付费墙：免费3次去水印，之后9.9元永久
+      if (!Paywall.tryUse('watermark', { price: '9.9', desc: '无限次数去水印 · AI智能检测 · 多种算法选择', freeLimit: 3, contactWx: 'a5050e' })) return;
+  const urlInput = document.getElementById('urlInput').value.trim();
+
+  if (mode === 'url' && !urlInput) {
+    showToast('请输入视频链接');
+    return;
+  }
+  if (mode === 'upload' && !selectedFile) {
+    showToast('请选择视频文件');
+    return;
+  }
+
+  // 显示进度
+  document.getElementById('mainPanel').style.display = 'none';
+  document.getElementById('progressCard').classList.add('active');
+  document.getElementById('progTitle').textContent = '提交任务...';
+  document.getElementById('progSub').textContent = mode === 'url'
+    ? urlInput.substring(0, 60) : selectedFile.name;
+  document.getElementById('progFill').style.width = '2%';
+  document.getElementById('progPct').textContent = '2%';
+
+  try {
+    if (mode === 'url') {
+      // URL 模式
+      await fetch('/api/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: urlInput,
+          region: wmRegion,
+          algorithm,
+          quality,
+        }),
+      });
+    } else {
+      // 上传模式
+      const fd = new FormData();
+      fd.append('file', selectedFile);
+      fd.append('region', JSON.stringify(wmRegion));
+      fd.append('algorithm', algorithm);
+      fd.append('quality', quality);
+
+      // 显示上传进度
+      document.getElementById('progTitle').textContent = '上传视频...';
+      document.getElementById('progSub').textContent = selectedFile.name;
+      document.getElementById('progFill').style.width = '10%';
+      document.getElementById('progPct').textContent = '10%';
+
+      await fetch('/api/upload', {
+        method: 'POST',
+        body: fd,
+      });
+    }
+    startPoll();
+  } catch (e) {
+    showError('网络连接失败: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 进度轮询 */
+/* ═══════════════════════════════════════════════════════════ */
+function startPoll() {
+  clearInterval(pollTimer);
+  let lastPct = 0;
+
+  pollTimer = setInterval(async () => {
+    try {
+      const r = await fetch('/api/status');
+      const s = await r.json();
+
+      const pct = s.pct || 0;
+      document.getElementById('progFill').style.width = pct + '%';
+      document.getElementById('progPct').textContent = pct + '%';
+      document.getElementById('progSub').textContent = s.msg || '处理中...';
+
+      // 步骤图标
+      const icons = s.step === 'downloading' ? '📥'
+        : s.step === 'uploaded' ? '✅'
+        : pct < 20 ? '⚙️'
+        : pct < 50 ? '🔧'
+        : pct < 80 ? '✨'
+        : pct < 100 ? '🎬' : '✅';
+      document.getElementById('progIcon').textContent = icons;
+
+      if (s.err) {
+        clearInterval(pollTimer);
+        showError(s.err);
+      } else if (s.step === 'done' && pct >= 100 && s.result) {
+        clearInterval(pollTimer);
+        showDone();
+      }
+    } catch {
+      // 继续等待
+    }
+  }, 500);
+}
+
+function showDone() {
+  document.getElementById('progressCard').classList.remove('active');
+  document.getElementById('doneCard').classList.add('active');
+}
+
+function showError(msg) {
+  clearInterval(pollTimer);
+  document.getElementById('progressCard').classList.remove('active');
+  document.getElementById('errorCard').classList.add('active');
+  document.getElementById('errorMsg').textContent =
+    msg || '处理失败，请检查视频链接或尝试更换视频';
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 重置 */
+/* ═══════════════════════════════════════════════════════════ */
+function resetAll() {
+  clearInterval(pollTimer);
+  selectedFile = null; hasFile = false; videoInfo = null;
+
+  document.getElementById('progressCard').classList.remove('active');
+  document.getElementById('doneCard').classList.remove('active');
+  document.getElementById('errorCard').classList.remove('active');
+  document.getElementById('mainPanel').style.display = 'block';
+
+  document.getElementById('urlInput').value = '';
+  document.getElementById('urlInput').placeholder = '粘贴视频链接，如 https://v.douyin.com/xxx';
+  document.getElementById('fileInput').value = '';
+  const zone = document.getElementById('uploadZone');
+  zone.classList.remove('selected');
+  zone.querySelector('p').textContent = '点击选择或拖拽视频到此处';
+  zone.querySelector('small').textContent = '支持 MP4 · MOV · AVI · MKV · WebM · FLV（最大 2GB）';
+
+  // 恢复 overlay
+  document.getElementById('wmOverlay').style.display = 'none';
+  document.getElementById('previewCanvas').style.display = 'none';
+  document.getElementById('videoMeta').innerHTML = '<span>📐 --</span><span>⏱ --</span><span>📦 --</span>';
+}
+
+function afterDownload() { setTimeout(resetAll, 1000); }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* 工具函数 */
+/* ═══════════════════════════════════════════════════════════ */
+function formatSize(bytes) {
+  if (!bytes) return '--';
+  return bytes > 1e9 ? (bytes/1e9).toFixed(1) + ' GB'
+    : bytes > 1e6 ? (bytes/1e6).toFixed(1) + ' MB'
+    : (bytes/1e3).toFixed(0) + ' KB';
+}
+
+let toastTimer;
+function showToast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = `
+      position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+      background:rgba(30,30,50,.95);color:#e8e8f0;padding:10px 24px;
+      border-radius:24px;font-size:13px;font-weight:600;z-index:999;
+      border:1px solid rgba(255,255,255,.1);
+      backdrop-filter:blur(12px);box-shadow:0 4px 20px rgba(0,0,0,.5);
+      transition:opacity .3s;opacity:0;pointer-events:none;
+    `;
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+}
+
+/* 上传区点击 */
+document.getElementById('uploadZone').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+</script>
+</body>
+</html>
