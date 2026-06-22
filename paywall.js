@@ -145,6 +145,7 @@
       // 已超限，显示付费弹窗
       createModal();
       const modal = document.getElementById('paywall-modal');
+      modal.setAttribute('data-feature', feature);
       document.getElementById('paywall-desc').textContent =
         cfg.desc || `您已使用 ${cfg.freeLimit} 次免费${feature === 'ai-report' ? 'AI选校报告' : feature}，继续使用需付费解锁`;
       document.getElementById('paywall-amount').textContent = '¥' + (cfg.price || '9.9');
@@ -157,12 +158,15 @@
     /**
      * 解锁功能（用户声称已支付后调用）
      */
-    unlock: function (feature) {
+    unlock: function () {
+      const modal = document.getElementById('paywall-modal');
+      const feature = modal ? modal.getAttribute('data-feature') : null;
+      if (!feature) return;
       const usage = getUsage();
       usage[feature + '_unlocked'] = true;
       saveUsage(usage);
-      document.getElementById('paywall-modal').style.display = 'none';
-      // 触发自定义事件，让前端刷新
+      modal.style.display = 'none';
+      // 触发自定义事件，让前端处理（如自动重试）
       window.dispatchEvent(new CustomEvent('paywall-unlocked', { detail: { feature } }));
     },
 
