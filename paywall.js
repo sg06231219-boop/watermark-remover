@@ -10,7 +10,7 @@
   'use strict';
 
   const STORAGE_KEY = 'paywall_usage';
-  const DEFAULT_CONFIG = { freeLimit: 3, price: '9.9', contactWx: 'a5050e' };
+  const DEFAULT_CONFIG = { freeLimit: 3, price: '9.9', contactWx: 'a5050e', qrImg: '/static/img/donate-qr.png' };
 
   function getUsage() {
     try {
@@ -45,14 +45,13 @@
         </div>
         <div class="paywall-qr">
           <div class="paywall-qr-box" id="paywall-qr-box">
-            <!-- 微信收款码占位 -->
-            <div style="font-size:60px">💚</div>
-            <div style="font-size:13px;color:#999;margin-top:6px">微信扫码支付</div>
+            <img id="paywall-qr-img" src="" alt="赞赏码" style="width:200px;height:200px;object-fit:contain;border-radius:8px">
+            <div style="font-size:13px;color:#999;margin-top:8px">微信/支付宝 扫码赞赏</div>
             <div style="font-size:11px;color:#666;margin-top:4px" id="paywall-wxid">a5050e</div>
           </div>
         </div>
-        <p class="paywall-tip">💡 支付后截图发送微信，即刻解锁全部功能</p>
-        <p class="paywall-tip">解锁后所有功能无限使用，含：AI选校报告、录取概率、冲稳保推荐等</p>
+        <p class="paywall-tip">💡 赞赏任意金额后截图，即享全部功能</p>
+        <p class="paywall-tip" id="paywall-features">解锁后无限使用全部功能</p>
         <button class="paywall-unlock-btn" onclick="Paywall.unlock()">我已支付，立即解锁</button>
       </div>
     </div>
@@ -150,6 +149,7 @@
         cfg.desc || `您已使用 ${cfg.freeLimit} 次免费${feature === 'ai-report' ? 'AI选校报告' : feature}，继续使用需付费解锁`;
       document.getElementById('paywall-amount').textContent = '¥' + (cfg.price || '9.9');
       document.getElementById('paywall-wxid').textContent = cfg.contactWx || 'a5050e';
+      document.getElementById('paywall-qr-img').src = cfg.qrImg || '/static/img/donate-qr.png';
       modal.style.display = 'flex';
       return false;
     },
